@@ -1,11 +1,11 @@
 {% extends "encyclopedia/layout.html" %}
 
 {% block title %}
-    {{entryName}}
+    {{entry_title}}
 {% endblock %}
 
 {% block body %}
-    <h1>This would be an entry page</h1>
-    <p>{{entryContent}}</p>
+    <p>{{ entry_content|safe }}</p>
+    <a href="">Edit</a>
 
 {% endblock %}

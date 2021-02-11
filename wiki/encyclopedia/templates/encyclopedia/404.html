@@ -1,0 +1,13 @@
+{% extends "encyclopedia/layout.html" %}
+
+{% block title %}
+    Entry Not Found
+{% endblock %}
+
+{% block body %}
+    <h1>No entry found for "{{ entry_title }}"</h1>
+    <figure>
+        <img src="https://http.cat/404.jpg" alt="404 not found, with cat hiding under papers">
+        <figcaption>Image courtesy of <a href="https://http.cat">HTTP Cats</a></figcaption>
+    </figure>
+{% endblock %}

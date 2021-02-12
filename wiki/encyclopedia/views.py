@@ -16,10 +16,9 @@ import random
 
 
 class SearchForm(forms.Form):
-    # Placeholder text via widget from: https://stackoverflow.com/questions/4101258/how-do-i-add-a-placeholder-on-a-charfield-in-django
-    # search = forms.CharField(required=True, strip=True, widget=forms.TextInput(
-    #     attrs={'placeholder': 'Search Encyclopedia'}))
-    search_for = forms.CharField()
+    # CITATION:  Placeholder text via widget from https://stackoverflow.com/questions/4101258/how-do-i-add-a-placeholder-on-a-charfield-in-django
+    search_for = forms.CharField(required=True, strip=True, widget=forms.TextInput(
+        attrs={'placeholder': 'Search Encyclopedia'}))
 
 
 def index(request):
@@ -27,8 +26,8 @@ def index(request):
         "entries": util.list_entries(), "form": SearchForm()
     })
 
-# Render a single wiki entry
 
+# Render a single wiki entry
 
 def entry(request, entry):
     if entry in util.list_entries():
@@ -52,19 +51,22 @@ def search(request):
             search = form.cleaned_data["search_for"]
             # If the search string matches an entry, render it using the "entry" function
             if search in util.list_entries():
-                return HttpResponseRedirect(reverse("encyclopedia:entry", args = [search]))
-            #If no exact match is found, find partial matches
-            else: 
-                # IN PROGRESS:  partial match
-                indices = [i for i, s in enumerate(util.list_entries()) if search in s]     # Partial match logic from:  https://stackoverflow.com/questions/14849293/python-find-index-position-in-list-based-of-partial-string/14849322
-                # return render(request, "encyclopedia/dev.html", {"param": indices, "form": SearchForm()}) 
+                return HttpResponseRedirect(reverse("encyclopedia:entry", args=[search]))
+            # If no exact match is found, find partial matches
+            else:
+                # CITATION:  Partial match logic based on https://stackoverflow.com/questions/14849293/python-find-index-position-in-list-based-of-partial-string/14849322
+                indices = [i for i, s in enumerate(
+                    util.list_entries()) if search in s]
+                # CITATION:  list comprehension approach from https://stackoverflow.com/questions/25082410/apply-function-to-each-element-of-a-list  (I new this from a previous course, but I forgot)
+                titles = [ util.list_entries()[i] for i in indices]
                 return render(request, "encyclopedia/search-results.html", {
-        "entries": indices, "form": SearchForm()
-        #TO DO:  return values instead of indices
-    })
+                    "entries": titles, "form": SearchForm()
+                }
+                )
 
 
 # Go to a random entry
+
 def random_entry(request):
     # Select a pseudo-random entry from the list
     n = random.randrange(len(util.list_entries()))

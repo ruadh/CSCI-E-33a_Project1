@@ -1,0 +1,14 @@
+{% extends "encyclopedia/layout.html" %}
+
+{% block title %}
+    Entry Already Exists
+{% endblock %}
+
+{% block body %}
+    <!-- I'm not sure if error 405 or error 409 was the best match for this scenario -->
+    <h1>ERROR:  An entry already exists for "{{ entry_title }}"</h1>
+    <figure>
+        <img src="https://http.cat/409.jpg" alt="409 conflict error, with two cats fighting">
+        <figcaption>Image courtesy of <a href="https://http.cat">HTTP Cats</a></figcaption>
+    </figure>
+{% endblock %}

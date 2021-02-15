@@ -1,0 +1,18 @@
+{% extends "encyclopedia/layout.html" %}
+
+{% block title %}
+    Create New Entry
+{% endblock %}
+
+{% block body %}
+    <h1>NEW/EDIT ENTRY</h1>
+    <p>You may format your wiki content using <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">Markdown syntax</a></p>
+    <form action="{% url 'encyclopedia:submit_entry' %}" method="post">
+        {% csrf_token %}
+        {{ entry_form }}
+        <input type="submit">
+    </form>
+    <h2>DEV ONLY:</h2>
+    <p>{{ request }}</p>
+
+{% endblock %}

@@ -12,20 +12,30 @@ from django.http import HttpResponseRedirect
 
 import random
 
-# Search form class
 
+# FORM CLASSES
+# CITATION:  Placeholder text via widget from https://stackoverflow.com/questions/4101258/how-do-i-add-a-placeholder-on-a-charfield-in-django
 
+# Search form object
 class SearchForm(forms.Form):
-    # CITATION:  Placeholder text via widget from https://stackoverflow.com/questions/4101258/how-do-i-add-a-placeholder-on-a-charfield-in-django
     search_for = forms.CharField(required=True, strip=True, widget=forms.TextInput(
         attrs={'placeholder': 'Search Encyclopedia'}))
+
+# Entry form object  (used for both creating and editing entries)
+class EntryForm(forms.Form):
+    title = forms.CharField(required=True, strip=True, widget=forms.TextInput(
+        attrs={'placeholder': 'Title'}))
+    content = forms.CharField(required=True, strip=True, widget=forms.Textarea(
+        attrs={'placeholder': 'Body'}))
 
 
 def index(request):
     return render(request, "encyclopedia/index.html", {
-        "entries": util.list_entries(), "form": SearchForm()
+        "entries": util.list_entries(), "search_form": SearchForm()
     })
 
+
+# FUNCTIONS
 
 # Render a single wiki entry
 
@@ -34,10 +44,10 @@ def entry(request, entry):
         # Convert the entry's markdown to HTML
         html = Markdown()
         txt = html.convert(util.get_entry(entry))
-        return render(request, "encyclopedia/entry.html", {"entry_content": txt, "entry_title": entry, "form": SearchForm()})
+        return render(request, "encyclopedia/entry.html", {"entry_content": txt, "entry_title": entry, "search_form": SearchForm()})
     else:
         # If no entry exists, render the 404 error page
-        return render(request, "encyclopedia/404.html", {"entry_title": entry, "form": SearchForm()})
+        return render(request, "encyclopedia/error-not-found.html", {"entry_title": entry, "search_form": SearchForm()})
 
 
 # Search for an entry
@@ -54,13 +64,13 @@ def search(request):
                 return HttpResponseRedirect(reverse("encyclopedia:entry", args=[search]))
             # If no exact match is found, find partial matches
             else:
-                # CITATION:  Partial match logic based on https://stackoverflow.com/questions/14849293/python-find-index-position-in-list-based-of-partial-string/14849322
+                # CITATION:  Enumeration approach based on https://stackoverflow.com/questions/14849293/python-find-index-position-in-list-based-of-partial-string/14849322
                 indices = [i for i, s in enumerate(
                     util.list_entries()) if search in s]
-                # CITATION:  list comprehension approach from https://stackoverflow.com/questions/25082410/apply-function-to-each-element-of-a-list  (I new this from a previous course, but I forgot)
+                # CITATION:  list comprehension approach based on https://stackoverflow.com/questions/25082410/apply-function-to-each-element-of-a-list  (I new this from a previous course, but I forgot)
                 titles = [ util.list_entries()[i] for i in indices]
                 return render(request, "encyclopedia/search-results.html", {
-                    "entries": titles, "form": SearchForm()
+                    "entries": titles, "search_form": SearchForm()
                 }
                 )
 
@@ -75,10 +85,38 @@ def random_entry(request):
     return entry(request, entr)
 
 
-# Create a new entry
+# Load the edit entry form
+def load_entry(request):
+    if request.method == "POST":
+        test = 1
+        # TO DO:  load the existing entry
+        # TEST ME
+        # form = EntryForm(request.GET)
+        # title = form.cleaned_data["title"]
+        # content = form.cleaned_data["content"]
+        # return HttpResponseRedirect(reverse("encyclopedia:edit-entry", args=[title]))
+    else:
+        return render(request, "encyclopedia/edit-entry.html", {
+            "entries": util.list_entries(), "search_form": SearchForm(), "entry_form": EntryForm()
+        })
+        
 
+def submit_entry(request):
+    if request.method == "POST":
+        form = EntryForm(request.POST)
+        # Validate and clean the request and pull out the form fields
+        if form.is_valid():
+            title = form.cleaned_data["title"]
+            content = form.cleaned_data["content"]
+            # If an entry already exists with this title, show an error message
+            if title in util.list_entries():
+                return render(request, "encyclopedia/duplicate-entry.html", {"entry_title": title, "search_form": SearchForm()})
+            else:
+                # Create a new entry, including h1-formatted title before the contents
+                util.save_entry(title, "# " + title + "\r\n" + content)
+                return HttpResponseRedirect(reverse("encyclopedia:entry", args=[title]))
 
 # FOR DEVELOPMENT ONLY:
 
 def dev(request):
-    return render(request, "encyclopedia/dev.html", {"param": util.list_entries(), "form": SearchForm()})
+    return render(request, "encyclopedia/dev.html", {"param": util.list_entries(), "search_form": SearchForm()})

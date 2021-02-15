@@ -27,6 +27,7 @@ class EntryForm(forms.Form):
         attrs={'placeholder': 'Title'}))
     content = forms.CharField(required=True, strip=True, widget=forms.Textarea(
         attrs={'placeholder': 'Body'}))
+    action = forms.CharField(initial="create", widget=forms.HiddenInput)
 
 
 def index(request):
@@ -85,21 +86,28 @@ def random_entry(request):
     return entry(request, entr)
 
 
-# Load the edit entry form
-def load_entry(request):
-    if request.method == "POST":
-        test = 1
-        # TO DO:  load the existing entry
-        # TEST ME
-        # form = EntryForm(request.GET)
-        # title = form.cleaned_data["title"]
-        # content = form.cleaned_data["content"]
-        # return HttpResponseRedirect(reverse("encyclopedia:edit-entry", args=[title]))
-    else:
-        return render(request, "encyclopedia/edit-entry.html", {
-            "entries": util.list_entries(), "search_form": SearchForm(), "entry_form": EntryForm()
+# Create a new entry
+
+def create_entry(request):
+    return render(request, "encyclopedia/edit-entry.html", {
+            "search_form": SearchForm(), "entry_form": EntryForm(), "action": "Create New"
         })
-        
+
+
+# Load an existing entry to be edited
+
+def load_entry(request, entry):
+    # Validate the entry name before attempting to load
+    if entry in util.list_entries():
+        # CITATION:  initial syntax from:  https://stackoverflow.com/questions/936376/prepopulate-django-non-model-form
+        form = EntryForm(initial={"title": entry, "content": util.get_entry(entry), "action": "edit" } )
+        return render(request, "encyclopedia/edit-entry.html", {"search_form": SearchForm(), "entry_form": form, "action": "Edit" } )
+    else:
+        # If no entry exists, render the 404 error page
+        return render(request, "encyclopedia/error-not-found.html", {"entry_title": entry, "search_form": SearchForm()})
+
+
+# Submit entry form (create or update existing)
 
 def submit_entry(request):
     if request.method == "POST":
@@ -108,15 +116,19 @@ def submit_entry(request):
         if form.is_valid():
             title = form.cleaned_data["title"]
             content = form.cleaned_data["content"]
-            # If an entry already exists with this title, show an error message
-            if title in util.list_entries():
+            # If we are trying to create a new entry, but one already exists with this title, show an error message
+            if title in util.list_entries() and form.cleaned_data["action"] == "create":
                 return render(request, "encyclopedia/duplicate-entry.html", {"entry_title": title, "search_form": SearchForm()})
             else:
-                # Create a new entry, including h1-formatted title before the contents
-                util.save_entry(title, "# " + title + "\r\n" + content)
+                if form.cleaned_data["action"] == "create":
+                    # Create a new entry, adding the title, formatted as h1
+                    util.save_entry(title, "# " + title + "\r\n" + content)
+                else:
+                    # Save the edited entry (not adding the title, since it should already be there)
+                    util.save_entry(title, content)
                 return HttpResponseRedirect(reverse("encyclopedia:entry", args=[title]))
 
 # FOR DEVELOPMENT ONLY:
 
-def dev(request):
-    return render(request, "encyclopedia/dev.html", {"param": util.list_entries(), "search_form": SearchForm()})
+def dev(request, param):
+    return render(request, "encyclopedia/dev.html", {"param": param, "search_form": SearchForm()})

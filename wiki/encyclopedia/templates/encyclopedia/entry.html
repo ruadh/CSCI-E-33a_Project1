@@ -6,6 +6,6 @@
 
 {% block body %}
     <p>{{ entry_content|safe }}</p>
-    <a href="">Edit</a>
+    <a href="{% url 'encyclopedia:load_entry' entry_title%}">Edit</a>
 
 {% endblock %}

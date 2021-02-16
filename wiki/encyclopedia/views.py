@@ -14,19 +14,15 @@ import random
 
 
 # FORM CLASSES
-# CITATION:  Placeholder text via widget from https://stackoverflow.com/questions/4101258/how-do-i-add-a-placeholder-on-a-charfield-in-django
 
 # Search form object
 class SearchForm(forms.Form):
-    search_for = forms.CharField(required=True, strip=True, widget=forms.TextInput(
-        attrs={'placeholder': 'Search Encyclopedia'}))
+    search_for = forms.CharField(required=True, strip=True, widget=forms.TextInput())
 
 # Entry form object  (used for both creating and editing entries)
 class EntryForm(forms.Form):
-    title = forms.CharField(required=True, strip=True, widget=forms.TextInput(
-        attrs={'placeholder': 'Title'}))
-    content = forms.CharField(required=True, strip=True, widget=forms.Textarea(
-        attrs={'placeholder': 'Body'}))
+    title = forms.CharField(required=True, strip=True, widget=forms.TextInput())
+    content = forms.CharField(required=True, strip=True, widget=forms.Textarea())
     action = forms.CharField(initial="create", widget=forms.HiddenInput)
 
 
@@ -99,7 +95,7 @@ def create_entry(request):
 def load_entry(request, entry):
     # Validate the entry name before attempting to load
     if entry in util.list_entries():
-        # CITATION:  initial syntax from:  https://stackoverflow.com/questions/936376/prepopulate-django-non-model-form
+        # CITATION:  initial values syntax from:  https://stackoverflow.com/questions/936376/prepopulate-django-non-model-form
         form = EntryForm(initial={"title": entry, "content": util.get_entry(entry), "action": "edit" } )
         # Don't allow the user to change the title, since that will save it as a new entry
         # CITATION:  modifying a field's widget from:  https://stackoverflow.com/questions/6862250/change-a-django-form-field-to-a-hidden-field

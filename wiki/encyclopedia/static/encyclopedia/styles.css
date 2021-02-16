@@ -13,7 +13,7 @@ h1 {
 }
 
 textarea {
-    height: 90vh;
+    height: 60vh;  /* Updated Jess Reed from 90vh, so the Submit button stays above the fold */
     width: 80%;
 }
 
@@ -36,3 +36,45 @@ textarea {
 .sidebar h2 {
     margin-top: 5px;
 }
+
+/* Style refinements by Jess Reed.  See also textarea above */
+
+/* Form Styles */
+
+input, label {
+    display: block;
+}
+
+input[type="text"] {
+    width: 80%;
+}
+
+label {
+    margin-top: 1rem;
+    font-weight: bold;
+    color: #4F4F4F;
+}
+
+/* Search box in the sidebar */
+.sidebar form input {
+    margin-bottom: 1rem;
+    width: 100%
+}
+
+textarea {
+    border-style: inset;
+}
+
+/* Images on error pages */
+
+figure {
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+figure img{
+    max-width: 75vh;
+}
+

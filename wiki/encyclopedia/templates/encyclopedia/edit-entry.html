@@ -5,8 +5,14 @@
 {% endblock %}
 
 {% block body %}
-    <h1>{{action }} Entry</h1>
-    <p>You may format your wiki content using <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">Markdown syntax</a></p>
+    {% if action == "edit" %}
+        <h1>Edit Entry: {{ entry_title }}</h1>
+    {% else %}
+        <h1>Create Entry</h1>
+    {% endif %}
+
+    
+    <p>You may format your wiki content using <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">Markdown</a></p>
     <form action="{% url 'encyclopedia:submit_entry' %}" method="post">
         {% csrf_token %}
         {{ entry_form }}

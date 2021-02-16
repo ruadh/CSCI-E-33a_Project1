@@ -101,9 +101,12 @@ def load_entry(request, entry):
     if entry in util.list_entries():
         # CITATION:  initial syntax from:  https://stackoverflow.com/questions/936376/prepopulate-django-non-model-form
         form = EntryForm(initial={"title": entry, "content": util.get_entry(entry), "action": "edit" } )
-        return render(request, "encyclopedia/edit-entry.html", {"search_form": SearchForm(), "entry_form": form, "action": "Edit" } )
+        # Don't allow the user to change the title, since that will save it as a new entry
+        # CITATION:  modifying a field's widget from:  https://stackoverflow.com/questions/6862250/change-a-django-form-field-to-a-hidden-field
+        form.fields['title'].widget = forms.HiddenInput()
+        return render(request, "encyclopedia/edit-entry.html", {"search_form": SearchForm(), "entry_form": form, "action": "edit", "entry_title": entry } )
     else:
-        # If no entry exists, render the 404 error page
+        # If no entry exists, render the 404 error page  (ex:  if the user accesses this by typing the /edit/TITLE URL)
         return render(request, "encyclopedia/error-not-found.html", {"entry_title": entry, "search_form": SearchForm()})
 
 

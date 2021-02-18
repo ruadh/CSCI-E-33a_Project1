@@ -15,13 +15,14 @@ import random
 
 # FORM CLASSES
 
-# Search form object
+# Search form
+
 class SearchForm(forms.Form):
     search_for = forms.CharField(
         required=True, strip=True, widget=forms.TextInput())
 
-# Entry form object  (used for both creating and editing entries)
 
+# Entry form (used for creating and editing entries)
 
 class EntryForm(forms.Form):
     title = forms.CharField(required=True, strip=True,
@@ -44,15 +45,19 @@ def index(request):
 # Render a single wiki entry
 
 def entry(request, entry):
-    # Comparing lowercase titles, in case the user doesn't know the correct case
-    if entry.lower() in [title.lower() for title in util.list_entries()]:
+    # If the title exists, render it
+    if entry.casefold() in [title.casefold() for title in util.list_entries()]:
         # Convert the entry's markdown to HTML
         html = Markdown()
         txt = html.convert(util.get_entry(entry))
-        return render(request, "encyclopedia/entry.html", {"entry_content": txt, "entry_title": entry, "search_form": SearchForm()})
+        return render(
+            request, "encyclopedia/entry.html",
+            {"entry_content": txt, "entry_title": entry,
+             "search_form": SearchForm()})
     else:
         # If no entry exists, render the 404 error page
-        return render(request, "encyclopedia/error-not-found.html", {"entry_title": entry, "search_form": SearchForm()})
+        return render(request, "encyclopedia/error-not-found.html",
+                      {"entry_title": entry, "search_form": SearchForm()})
 
 
 # Search for an entry
@@ -66,24 +71,32 @@ def search(request):
             # Gather the original and lower-case search string and entries list
             search = form.cleaned_data["search_for"]
             entries = util.list_entries()
-            search_lower = search.lower()
-            lower_entries = [title.lower() for title in entries]
+            search_neutral = search.casefold()
+            entries_neutral = [title.casefold() for title in entries]
             # If the search string matches an entry, render its entry page
-            if search_lower in lower_entries:
+            if search_neutral in entries_neutral:
                 # Render the page using the entry's correct case
-                actual_title = entries[lower_entries.index(search_lower)]
-                return HttpResponseRedirect(reverse("encyclopedia:entry", args=[actual_title]))
+                actual_title = entries[entries_neutral.index(search_neutral)]
+                return HttpResponseRedirect(
+                    reverse(
+                        "encyclopedia:entry",
+                        args=[actual_title]))
             # If no exact match is found, look for partial matches
             else:
-                # CITATION:  Enumeration approach based on https://stackoverflow.com/questions/14849293/python-find-index-position-in-list-based-of-partial-string/14849322
+                # CITATION:  Enumeration approach based on:
+                # https://stackoverflow.com/questions/14849293/python-find-index-position-in-list-based-of-partial-string/14849322
                 indices = [i for i, s in enumerate(
-                    lower_entries ) if search_lower in s]
+                    entries_neutral) if search_neutral in s]
                 titles = [entries[i] for i in indices]
                 if titles:
-                    return render(request, "encyclopedia/search-results.html", {"entries": titles, "search_form": SearchForm()})
-                # If no partial matches exist, send the user to the 404 error page
+                    return render(
+                        request, "encyclopedia/search-results.html",
+                        {"entries": titles, "search_form": SearchForm()})
+                # If no partial matches exist, send the user to the 404 error
                 else:
-                    return render(request, "encyclopedia/error-not-found.html", {"entry_title": search, "search_form": SearchForm()})
+                    return render(
+                        request, "encyclopedia/error-not-found.html",
+                        {"entry_title": search, "search_form": SearchForm()})
 
 
 # Render a random entry
@@ -99,9 +112,11 @@ def random_entry(request):
 # Create a new entry
 
 def create_entry(request):
-    return render(request, "encyclopedia/edit-entry.html", {
-        "search_form": SearchForm(), "entry_form": EntryForm(), "action": "Create New"
-    })
+    return render(
+        request, "encyclopedia/edit-entry.html",
+        {"search_form": SearchForm(),
+         "entry_form": EntryForm(),
+         "action": "Create New"})
 
 
 # Load an existing entry into the edit form
@@ -109,16 +124,24 @@ def create_entry(request):
 def load_entry(request, entry):
     # Validate the entry name before attempting to load
     if entry in util.list_entries():
-        # CITATION:  initial values syntax from:  https://stackoverflow.com/questions/936376/prepopulate-django-non-model-form
+        # CITATION:  initial values syntax from:
+        # https://stackoverflow.com/questions/936376/prepopulate-django-non-model-form
         form = EntryForm(
-            initial={"title": entry, "content": util.get_entry(entry), "action": "edit"})
-        # Don't allow the user to change the title, since that will save it as a new entry
-        # CITATION:  modifying a field's widget from:  https://stackoverflow.com/questions/6862250/change-a-django-form-field-to-a-hidden-field
+            initial={"title": entry, "content": util.get_entry(
+                entry),
+                "action": "edit"})
+        # Don't allow the user to change the title
+        # CITATION:  modifying a field's widget from:
+        # https://stackoverflow.com/questions/6862250/change-a-django-form-field-to-a-hidden-field
         form.fields['title'].widget = forms.HiddenInput()
-        return render(request, "encyclopedia/edit-entry.html", {"search_form": SearchForm(), "entry_form": form, "action": "edit", "entry_title": entry})
+        return render(request, "encyclopedia/edit-entry.html",
+                      {"search_form": SearchForm(),
+                       "entry_form": form, "action": "edit",
+                       "entry_title": entry})
     else:
-        # If no entry exists, render the 404 error page  (ex:  if the user accesses this by typing the /edit/TITLE URL)
-        return render(request, "encyclopedia/error-not-found.html", {"entry_title": entry, "search_form": SearchForm()})
+        # If no entry exists, render the 404 error page
+        return render(request, "encyclopedia/error-not-found.html",
+                      {"entry_title": entry, "search_form": SearchForm()})
 
 
 # Submit edit form (used to create or update existing)
@@ -130,20 +153,26 @@ def submit_entry(request):
         if form.is_valid():
             title = form.cleaned_data["title"]
             content = form.cleaned_data["content"]
-            # If we are trying to create a new entry, but one already exists with this title, show an error message
-            if title.lower() in [entry.lower() for entry in util.list_entries()] and form.cleaned_data["action"] == "create":
-                return render(request, "encyclopedia/duplicate-entry.html", {"entry_title": title, "search_form": SearchForm()})
+            # Disallow creating a new entry with an existing title
+            if (title.casefold() in [entry.casefold() for entry in util.list_entries()]
+                    and form.cleaned_data["action"] == "create"):
+                return render(
+                    request, "encyclopedia/duplicate-entry.html",
+                    {"entry_title": title, "search_form": SearchForm()})
             else:
                 if form.cleaned_data["action"] == "create":
                     # Create a new entry, adding the title, formatted as h1
                     util.save_entry(title, "# " + title + "\r\n" + content)
                 else:
-                    # Save the edited entry (not adding the title, since it should already be there)
+                    # Save the edited entry
                     util.save_entry(title, content)
-                return HttpResponseRedirect(reverse("encyclopedia:entry", args=[title]))
+                return HttpResponseRedirect(
+                    reverse("encyclopedia:entry", args=[title]))
 
 # FOR DEVELOPMENT ONLY:
 
 
 def dev(request, param):
-    return render(request, "encyclopedia/dev.html", {"param": param, "search_form": SearchForm()})
+    return render(
+        request, "encyclopedia/dev.html",
+        {"param": param, "search_form": SearchForm()})

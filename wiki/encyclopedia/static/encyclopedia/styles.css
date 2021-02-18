@@ -13,7 +13,8 @@ h1 {
 }
 
 textarea {
-    height: 60vh;  /* Updated Jess Reed from 90vh, so the Submit button stays above the fold */
+    height: 60vh;
+    /* Updated Jess Reed from 90vh, so the Submit button stays above the fold */
     width: 80%;
 }
 
@@ -41,7 +42,8 @@ textarea {
 
 /* Form Styles */
 
-input, label {
+input,
+label {
     display: block;
 }
 
@@ -56,6 +58,7 @@ label {
 }
 
 /* Search box in the sidebar */
+
 .sidebar form input {
     margin-bottom: 1rem;
     width: 100%
@@ -77,4 +80,3 @@ figure {
 figure img {
     max-width: 75vh;
 }
-

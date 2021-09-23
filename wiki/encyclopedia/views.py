@@ -151,8 +151,10 @@ def submit_entry(request):
                               {'entry_title': title, 'search_form': SearchForm()})
             else:
                 if form.cleaned_data['action'] == 'create':
-                    # Create a new entry, adding the title formatted as h1
-                    util.save_entry(title, '# ' + title + '\r\n' + content)
+                    # Create a new entry
+                    # MOD AFTER GRADING: Originally I included the title as an h1 in the entry.  In this version, it's passed to template entry.html
+                    util.save_entry(title, content)
+                    
                 else:
                     # Save the edited entry
                     util.save_entry(title, content)

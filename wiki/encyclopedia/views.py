@@ -1,3 +1,7 @@
+# Note:  This submission is based on homework I submitted when I took this class in Spring 2021
+#        I have added comments to show where I made changes based on Vlad's grading feedback
+#        These are marked "MOD AFTER GRADING"
+
 from django.shortcuts import render
 
 from . import util
@@ -97,8 +101,8 @@ def random_entry(request):
     # Select a pseudo-random entry from the list
     n = random.randrange(len(util.list_entries()))
     entr = util.list_entries()[n]
-    # Pass its title to the entry function to be rendered
-    return entry(request, entr)
+    # MOD AFTER GRADING: Loading the entry in a new page, not rendering in the current one
+    return HttpResponseRedirect(reverse('encyclopedia:entry', args=[entr]))
 
 
 # Load a blank entry form

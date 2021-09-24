@@ -1,6 +1,6 @@
 # Note:  This submission is based on homework I submitted when I took this class in Spring 2021
-#        I have added comments to show where I made changes based on Vlad's grading feedback
-#        These are marked "POST-GRADING".
+#        I have added comments marked "POST-GRADING" to show where I made changes based on Vlad's grading feedback
+#        Other changes that were not based on TF feedback are not called out.
 
 from django.shortcuts import render
 
@@ -41,7 +41,7 @@ def entry(request, entry):
     # If the title exists, render it
     if entry.casefold() in [title.casefold() for title in util.list_entries()]:
         # Convert the entry's markdown to HTML
-        # POST-GRADING:  I originally stored Markdown() in a separate variable, because I didn't know you could follow it with . notation
+        # POST-GRADING:  Vlad advised me not to store Markdown() in a separate variable before converting
         txt = Markdown().convert(util.get_entry(entry))
         return render(
             request, 'encyclopedia/entry.html', {'entry_content': txt, 'entry_title': entry})
@@ -51,8 +51,8 @@ def entry(request, entry):
 
 
 # Search for an entry
-# POST-GRADING:  I originally used a Django form for the search, but Vlad pointed out that having to pass the form object every time I render a page is klunky
-# CITATION:  I inferred how to pass the query string from an HTML form to Python code from https://stackoverflow.com/q/39842386
+# POST-GRADING:  Vlad pointed out that using a Django form for the search is klunky
+# CITATION:  I inferred how to pass the query string from an HTML form from: https://stackoverflow.com/q/39842386
 def search(request):
     # We only want to process GET requests from this form
     if request.method == 'GET':
@@ -68,10 +68,10 @@ def search(request):
             return HttpResponseRedirect(reverse('encyclopedia:entry', args=[actual_title]))
         # If no exact match is found, look for partial matches
         else:
-            # POST-GRADING:  Using more compact syntax that Vlad provided in his comments on the code I submitted in Spring 2021, which was based on: https://stackoverflow.com/a/14849322
+            # POST-GRADING:  Using more compact syntax that Vlad provided in grading comments
             titles = [entry for entry in entries if search.casefold()
                       in entry.casefold()]
-            # POST-GRADING:  Using conditional logic in the search-results template to show no results instead of the 404 page
+            # POST-GRADING:  Using conditional logic in the search-results template to handle no results found
             return render(request, 'encyclopedia/search-results.html', {'entries': titles, 'search': search})
 
 # Render a random entry
@@ -122,7 +122,7 @@ def submit_entry(request):
             else:
                 if form.cleaned_data['action'] == 'create':
                     # Create a new entry
-                    # POST-GRADING: Originally I included the title as an h1 in the entry.  In this version, it's passed to template entry.html
+                    # POST-GRADING: Not including the title in the editable body of the entry
                     util.save_entry(title, content)
 
                 else:

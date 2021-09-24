@@ -16,8 +16,7 @@
         <div class="sidebar col-lg-2 col-md-3">
             <h2>Wiki</h2>
             <form action="{% url 'encyclopedia:search' %}" method="get">
-                {% csrf_token %}
-                {{ search_form }}
+                <input method="get" class="search" type="text" name="q" placeholder="Search Encyclopedia">
             </form>
             <div>
                 <a href="{% url 'encyclopedia:index' %}">Home</a>
@@ -29,10 +28,6 @@
                 <a href="{% url 'encyclopedia:random_entry' %}">Random Entry</a>
             </div>
 
-            <h2>TEMP FOR TESTING</h2>
-            <form action="{% url 'encyclopedia:search' %}" method="get">
-                <input method="get" class="search" type="text" name="q" placeholder="Search Encyclopedia" value="{{ request.GET.q }}">
-            </form>
             {% block nav %}
             {% endblock %}
         </div>

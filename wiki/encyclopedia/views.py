@@ -1,6 +1,6 @@
 # Note:  This submission is based on homework I submitted when I took this class in Spring 2021
 #        I have added comments to show where I made changes based on Vlad's grading feedback
-#        These are marked "POST-GRADING".  
+#        These are marked "POST-GRADING".
 
 from django.shortcuts import render
 
@@ -14,19 +14,10 @@ from django.urls import reverse
 
 from django.http import HttpResponseRedirect
 
-#TEMP FOR TESTING
-from django.http import HttpResponse
-
 import random
 
 
 # FORM CLASSES
-
-# Search form
-class SearchForm(forms.Form):
-    search = forms.CharField(
-        required=True, strip=True, widget=forms.TextInput())
-
 
 # Entry form for creating and editing entries
 class EntryForm(forms.Form):
@@ -42,8 +33,7 @@ class EntryForm(forms.Form):
 # Render the index page
 def index(request):
     return render(request, 'encyclopedia/index.html', {
-        'entries': util.list_entries(), 'search_form': SearchForm()
-    })
+        'entries': util.list_entries()})
 
 
 # Render a single wiki entry
@@ -54,103 +44,16 @@ def entry(request, entry):
         # POST-GRADING:  I originally stored Markdown() in a separate variable, because I didn't know you could follow it with . notation
         txt = Markdown().convert(util.get_entry(entry))
         return render(
-            request, 'encyclopedia/entry.html',
-            {'entry_content': txt, 'entry_title': entry, 'search_form': SearchForm()})
+            request, 'encyclopedia/entry.html', {'entry_content': txt, 'entry_title': entry})
     else:
         # If no entry exists, render the 404 error page
-        return render(request, 'encyclopedia/error-not-found.html', {'entry_title': entry, 'search_form': SearchForm()})
+        return render(request, 'encyclopedia/error-not-found.html', {'entry_title': entry})
 
 
 # Search for an entry
-def search(request):
-    # We only want to process GET requests from this form
-    if request.method == 'GET':
-        form = SearchForm(request.GET)
-        # Validate and clean the request and pull out the search string
-        if form.is_valid():
-            # Convert the search string and entries list to caseless versions for comparison
-            # POST-GRADING: I originally named these variables "_lower", which isn't 100% accurate
-            search = form.cleaned_data['search']
-            entries = util.list_entries()
-            search_caseless = search.casefold()
-            entries_caseless = [title.casefold() for title in entries]
-            # If an exact match exists, render its entry page
-            if search_caseless in entries_caseless:
-                # Render the page using the entry's original case
-                actual_title = entries[entries_caseless.index(search_caseless)]
-                return HttpResponseRedirect(reverse('encyclopedia:entry', args=[actual_title]))
-            # If no exact match is found, look for partial matches
-            else:
-                # POST-GRADING:  Using more compact syntax that Vlad provided in his comments
-                #   on the code I submitted in Spring 2021, which was based on: https://stackoverflow.com/a/14849322
-                titles = [entry for entry in entries if search.casefold() in entry.casefold()] 
-                # POST-GRADING:  Using conditional logic in the search-results template to show no results instead of the 404 page
-                return render(request, 'encyclopedia/search-results.html',
-                                  {'entries': titles, 'search': search, 'search_form': SearchForm()})
-
-
-# Render a random entry
-def random_entry(request):
-    # Select a pseudo-random entry from the list
-    # POST-GRADING:  Vlad told me about random.choice in my grading comments
-    entr = random.choice(util.list_entries())
-    # POST-GRADING: Loading the entry in a new page, not rendering in the current one
-    return HttpResponseRedirect(reverse('encyclopedia:entry', args=[entr]))
-
-
-# Load a blank entry form
-def create_entry(request):
-    return render(
-        request, 'encyclopedia/edit-entry.html',
-        {'search_form': SearchForm(),
-         'entry_form': EntryForm(),
-         'action': 'Create New'})
-
-
-# Load an existing entry into the edit form
-def load_entry(request, entry):
-    # Validate the entry name before attempting to load
-    if entry in util.list_entries():
-        # CITATION:  initial values syntax from:  https://stackoverflow.com/a/936405
-        form = EntryForm(initial={'title': entry, 'content': util.get_entry(entry), 'action': 'edit'})
-        # CITATION:  Disabling the title field from:  https://stackoverflow.com/a/6862413
-        form.fields['title'].widget = forms.HiddenInput()
-        return render(
-            request, 'encyclopedia/edit-entry.html',
-            {'search_form': SearchForm(), 'entry_form': form, 'action': 'edit', 'entry_title': entry})
-    else:
-        # If no entry exists, render the 404 error page
-        return render(request, 'encyclopedia/error-not-found.html', {'entry_title': entry, 'search_form': SearchForm()})
-
-
-# Submit entry form (used to create or update existing)
-def submit_entry(request):
-    if request.method == 'POST':
-        form = EntryForm(request.POST)
-        # Validate and clean the request and pull out the form fields
-        if form.is_valid():
-            title = form.cleaned_data['title']
-            content = form.cleaned_data['content']
-            # Disallow creating a new entry with an existing title
-            if (title.casefold() in [entry.casefold() for entry in util.list_entries()]
-                    and form.cleaned_data['action'] == 'create'):
-                return render(request, 'encyclopedia/duplicate-entry.html',
-                              {'entry_title': title, 'search_form': SearchForm()})
-            else:
-                if form.cleaned_data['action'] == 'create':
-                    # Create a new entry
-                    # POST-GRADING: Originally I included the title as an h1 in the entry.  In this version, it's passed to template entry.html
-                    util.save_entry(title, content)
-                    
-                else:
-                    # Save the edited entry
-                    util.save_entry(title, content)
-                return HttpResponseRedirect(reverse('encyclopedia:entry', args=[title]))
-
-# Process search box submissions
-# POST-GRADING:  I originally handled the search with a Django form, but Vlad pointed out that having to pass the form object every time I render a page is klunky
+# POST-GRADING:  I originally used a Django form for the search, but Vlad pointed out that having to pass the form object every time I render a page is klunky
 # CITATION:  I inferred how to pass the query string from an HTML form to Python code from https://stackoverflow.com/q/39842386
-def search_redux(request):
+def search(request):
     # We only want to process GET requests from this form
     if request.method == 'GET':
         search = request.GET.get('q')
@@ -166,7 +69,63 @@ def search_redux(request):
         # If no exact match is found, look for partial matches
         else:
             # POST-GRADING:  Using more compact syntax that Vlad provided in his comments on the code I submitted in Spring 2021, which was based on: https://stackoverflow.com/a/14849322
-            titles = [entry for entry in entries if search.casefold() in entry.casefold()] 
+            titles = [entry for entry in entries if search.casefold()
+                      in entry.casefold()]
             # POST-GRADING:  Using conditional logic in the search-results template to show no results instead of the 404 page
-            return render(request, 'encyclopedia/search-results.html',
-                                {'entries': titles, 'search': search, 'search_form': SearchForm()})
+            return render(request, 'encyclopedia/search-results.html', {'entries': titles, 'search': search})
+
+# Render a random entry
+
+
+def random_entry(request):
+    # Select a pseudo-random entry from the list
+    # POST-GRADING:  Vlad told me about random.choice in my grading comments
+    entr = random.choice(util.list_entries())
+    # POST-GRADING: Loading the entry in a new page, not rendering in the current one
+    return HttpResponseRedirect(reverse('encyclopedia:entry', args=[entr]))
+
+
+# Load a blank entry form
+def create_entry(request):
+    return render(request, 'encyclopedia/edit-entry.html', {'entry_form': EntryForm(), 'action': 'Create New'})
+
+
+# Load an existing entry into the edit form
+def load_entry(request, entry):
+    # Validate the entry name before attempting to load
+    if entry in util.list_entries():
+        # CITATION:  initial values syntax from:  https://stackoverflow.com/a/936405
+        form = EntryForm(
+            initial={'title': entry, 'content': util.get_entry(entry), 'action': 'edit'})
+        # CITATION:  Disabling the title field from:  https://stackoverflow.com/a/6862413
+        form.fields['title'].widget = forms.HiddenInput()
+        return render(
+            request, 'encyclopedia/edit-entry.html',
+            {'entry_form': form, 'action': 'edit', 'entry_title': entry})
+    else:
+        # If no entry exists, render the 404 error page
+        return render(request, 'encyclopedia/error-not-found.html', {'entry_title': entry})
+
+
+# Submit entry form (used to create or update existing)
+def submit_entry(request):
+    if request.method == 'POST':
+        form = EntryForm(request.POST)
+        # Validate and clean the request and pull out the form fields
+        if form.is_valid():
+            title = form.cleaned_data['title']
+            content = form.cleaned_data['content']
+            # Disallow creating a new entry with an existing title
+            if (title.casefold() in [entry.casefold() for entry in util.list_entries()]
+                    and form.cleaned_data['action'] == 'create'):
+                return render(request, 'encyclopedia/duplicate-entry.html', {'entry_title': title})
+            else:
+                if form.cleaned_data['action'] == 'create':
+                    # Create a new entry
+                    # POST-GRADING: Originally I included the title as an h1 in the entry.  In this version, it's passed to template entry.html
+                    util.save_entry(title, content)
+
+                else:
+                    # Save the edited entry
+                    util.save_entry(title, content)
+                return HttpResponseRedirect(reverse('encyclopedia:entry', args=[title]))

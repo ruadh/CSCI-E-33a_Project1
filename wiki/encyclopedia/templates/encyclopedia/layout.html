@@ -28,6 +28,11 @@
             <div>
                 <a href="{% url 'encyclopedia:random_entry' %}">Random Entry</a>
             </div>
+
+            <h2>TEMP FOR TESTING</h2>
+            <form action="{% url 'encyclopedia:search' %}" method="get">
+                <input method="get" class="search" type="text" name="q" placeholder="Search Encyclopedia" value="{{ request.GET.q }}">
+            </form>
             {% block nav %}
             {% endblock %}
         </div>

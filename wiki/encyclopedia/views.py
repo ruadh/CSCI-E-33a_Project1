@@ -1,6 +1,6 @@
 # Note:  This submission is based on homework I submitted when I took this class in Spring 2021
 #        I have added comments to show where I made changes based on Vlad's grading feedback
-#        These are marked "MOD AFTER GRADING"
+#        These are marked "POST-GRADING".  
 
 from django.shortcuts import render
 
@@ -14,20 +14,21 @@ from django.urls import reverse
 
 from django.http import HttpResponseRedirect
 
+#TEMP FOR TESTING
+from django.http import HttpResponse
+
 import random
 
 
 # FORM CLASSES
 
 # Search form
-
 class SearchForm(forms.Form):
     search = forms.CharField(
         required=True, strip=True, widget=forms.TextInput())
 
 
 # Entry form for creating and editing entries
-
 class EntryForm(forms.Form):
     title = forms.CharField(required=True, strip=True,
                             widget=forms.TextInput())
@@ -39,7 +40,6 @@ class EntryForm(forms.Form):
 # FUNCTIONS
 
 # Render the index page
-
 def index(request):
     return render(request, 'encyclopedia/index.html', {
         'entries': util.list_entries(), 'search_form': SearchForm()
@@ -47,13 +47,12 @@ def index(request):
 
 
 # Render a single wiki entry
-
 def entry(request, entry):
     # If the title exists, render it
     if entry.casefold() in [title.casefold() for title in util.list_entries()]:
         # Convert the entry's markdown to HTML
-        html = Markdown()
-        txt = html.convert(util.get_entry(entry))
+        # POST-GRADING:  I originally stored Markdown() in a separate variable, because I didn't know you could follow it with . notation
+        txt = Markdown().convert(util.get_entry(entry))
         return render(
             request, 'encyclopedia/entry.html',
             {'entry_content': txt, 'entry_title': entry, 'search_form': SearchForm()})
@@ -63,50 +62,43 @@ def entry(request, entry):
 
 
 # Search for an entry
-
 def search(request):
     # We only want to process GET requests from this form
     if request.method == 'GET':
         form = SearchForm(request.GET)
         # Validate and clean the request and pull out the search string
         if form.is_valid():
-            # Convert the search string and entries list to lowercase for comparison
+            # Convert the search string and entries list to caseless versions for comparison
+            # POST-GRADING: I originally named these variables "_lower", which isn't 100% accurate
             search = form.cleaned_data['search']
             entries = util.list_entries()
-            search_lower = search.casefold()
-            entries_lower = [title.casefold() for title in entries]
+            search_caseless = search.casefold()
+            entries_caseless = [title.casefold() for title in entries]
             # If an exact match exists, render its entry page
-            if search_lower in entries_lower:
+            if search_caseless in entries_caseless:
                 # Render the page using the entry's original case
-                actual_title = entries[entries_lower.index(search_lower)]
+                actual_title = entries[entries_caseless.index(search_caseless)]
                 return HttpResponseRedirect(reverse('encyclopedia:entry', args=[actual_title]))
             # If no exact match is found, look for partial matches
             else:
-                # CITATION:  Enumeration approach based on:
-                # https://stackoverflow.com/questions/14849293/python-find-index-position-in-list-based-of-partial-string/14849322
-                indices = [i for i, s in enumerate(entries_lower) if search_lower in s]
-                titles = [entries[i] for i in indices]
-                if titles:
-                    return render(request, 'encyclopedia/search-results.html',
-                                  {'entries': titles, 'search_form': SearchForm()})
-                # If no partial matches exist, send the user to the 404 error
-                else:
-                    return render(request, 'encyclopedia/error-not-found.html',
-                                  {'entry_title': search, 'search_form': SearchForm()})
+                # POST-GRADING:  Using more compact syntax that Vlad provided in his comments
+                #   on the code I submitted in Spring 2021, which was based on: https://stackoverflow.com/a/14849322
+                titles = [entry for entry in entries if search.casefold() in entry.casefold()] 
+                # POST-GRADING:  Using conditional logic in the search-results template to show no results instead of the 404 page
+                return render(request, 'encyclopedia/search-results.html',
+                                  {'entries': titles, 'search': search, 'search_form': SearchForm()})
 
 
 # Render a random entry
-
 def random_entry(request):
     # Select a pseudo-random entry from the list
-    n = random.randrange(len(util.list_entries()))
-    entr = util.list_entries()[n]
-    # MOD AFTER GRADING: Loading the entry in a new page, not rendering in the current one
+    # POST-GRADING:  Vlad told me about random.choice in my grading comments
+    entr = random.choice(util.list_entries())
+    # POST-GRADING: Loading the entry in a new page, not rendering in the current one
     return HttpResponseRedirect(reverse('encyclopedia:entry', args=[entr]))
 
 
 # Load a blank entry form
-
 def create_entry(request):
     return render(
         request, 'encyclopedia/edit-entry.html',
@@ -116,16 +108,12 @@ def create_entry(request):
 
 
 # Load an existing entry into the edit form
-
 def load_entry(request, entry):
     # Validate the entry name before attempting to load
     if entry in util.list_entries():
-        # CITATION:  initial values syntax from:
-        # https://stackoverflow.com/questions/936376/prepopulate-django-non-model-form
+        # CITATION:  initial values syntax from:  https://stackoverflow.com/a/936405
         form = EntryForm(initial={'title': entry, 'content': util.get_entry(entry), 'action': 'edit'})
-        # Don't allow the user to change the title
-        # CITATION:  modifying a field's widget from:
-        # https://stackoverflow.com/questions/6862250/change-a-django-form-field-to-a-hidden-field
+        # CITATION:  Disabling the title field from:  https://stackoverflow.com/a/6862413
         form.fields['title'].widget = forms.HiddenInput()
         return render(
             request, 'encyclopedia/edit-entry.html',
@@ -136,7 +124,6 @@ def load_entry(request, entry):
 
 
 # Submit entry form (used to create or update existing)
-
 def submit_entry(request):
     if request.method == 'POST':
         form = EntryForm(request.POST)
@@ -152,10 +139,34 @@ def submit_entry(request):
             else:
                 if form.cleaned_data['action'] == 'create':
                     # Create a new entry
-                    # MOD AFTER GRADING: Originally I included the title as an h1 in the entry.  In this version, it's passed to template entry.html
+                    # POST-GRADING: Originally I included the title as an h1 in the entry.  In this version, it's passed to template entry.html
                     util.save_entry(title, content)
                     
                 else:
                     # Save the edited entry
                     util.save_entry(title, content)
                 return HttpResponseRedirect(reverse('encyclopedia:entry', args=[title]))
+
+# Process search box submissions
+# POST-GRADING:  I originally handled the search with a Django form, but Vlad pointed out that having to pass the form object every time I render a page is klunky
+# CITATION:  I inferred how to pass the query string from an HTML form to Python code from https://stackoverflow.com/q/39842386
+def search_redux(request):
+    # We only want to process GET requests from this form
+    if request.method == 'GET':
+        search = request.GET.get('q')
+        entries = util.list_entries()
+        # Convert the search string and entries list to caseless versions for comparison
+        # POST-GRADING: I originally named these variables "_lower", which isn't 100% accurate
+        search_caseless = search.casefold()
+        entries_caseless = [title.casefold() for title in entries]
+        # If an exact match exists, render its entry page using the entry's original case
+        if search_caseless in entries_caseless:
+            actual_title = entries[entries_caseless.index(search_caseless)]
+            return HttpResponseRedirect(reverse('encyclopedia:entry', args=[actual_title]))
+        # If no exact match is found, look for partial matches
+        else:
+            # POST-GRADING:  Using more compact syntax that Vlad provided in his comments on the code I submitted in Spring 2021, which was based on: https://stackoverflow.com/a/14849322
+            titles = [entry for entry in entries if search.casefold() in entry.casefold()] 
+            # POST-GRADING:  Using conditional logic in the search-results template to show no results instead of the 404 page
+            return render(request, 'encyclopedia/search-results.html',
+                                {'entries': titles, 'search': search, 'search_form': SearchForm()})
